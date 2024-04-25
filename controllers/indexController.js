@@ -1,15 +1,11 @@
 const userTbl = require('../models/userTbl');
 const jwt = require('jsonwebtoken');
+const userServices = require('../services/userServices');
 
 const register = async (req,res) => {
     try {
-        const{id,name,email,password} = req.body;
-        let user = await userTbl.create({
-            id : id,
-            name: name,
-            email : email,
-            password : password
-        });
+        const{id,name,email,password,role} = req.body;
+        let user = await userServices.createUser({id,name,email,password,role});
         if(user){
             res.json({ message : "User added successfully", status : 1});
         }else{
@@ -23,7 +19,7 @@ const register = async (req,res) => {
 
 const viewUser = async (req,res) => {
     try {
-        let userData = await userTbl.findAll({});
+        let userData = await userServices.findUser();
         if(userData){
             res.json({ Data : userData, status : 1});
         }else{
@@ -37,7 +33,8 @@ const viewUser = async (req,res) => {
 
 const viewUserById = async (req,res) => {
     try {
-        let userData = await userTbl.findOne({where : {id : req.body.id}});
+        const reqBody = req.body;
+        let userData = await userServices.findUserById(reqBody.id);
         if(userData){
             res.json({ Data : userData, status : 1});
         }else{
@@ -51,7 +48,8 @@ const viewUserById = async (req,res) => {
 
 const deleteUser = async (req,res) => {
     try {
-        let delUser = await userTbl.destroy({where : {id : req.body.id}});
+        const reqBody = req.body;
+        let delUser = await userServices.removeUser(reqBody.id);
         if(delUser){
             res.json({ message : "User deleted successfully", status : 1});
         }else{
@@ -63,17 +61,24 @@ const deleteUser = async (req,res) => {
     }
 }
 
+const deleteAllUser = async (req,res) => {
+    try {
+        let delUser = await userServices.removeAllUser();
+        if(!delUser){
+            res.json({ message : "All users deleted successfully", status : 1});
+        }else{
+            res.json({ message : "User not deleted", status : 0});
+        }
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
+}
+
 const updateUser = async (req,res) => {
     try {
-        const{id,name,email,password} = req.body;
-        let edUser = await userTbl.update({
-                name : name,
-                email: email,
-                password : password
-            },
-            {
-                where : { id : id}
-            });
+        const{name,email,password} = req.body;
+        let edUser = await userServices.editUser(req.body.id ,{name,email,password});
         if(edUser){
             res.json({ message : "User updated successfully", status : 1});
         }else{
@@ -88,12 +93,40 @@ const updateUser = async (req,res) => {
 const login = async (req,res) => {
     try {
         const{email,password} = req.body;
-        let loginData = await userTbl.findOne({email : email});
+        let loginData = await userTbl.findOne({where : {email : email}});
         if(!loginData || loginData.password != password){
             res.json({ message : "Invalid email or password", status : 0});
         }else{
-            const Token = jwt.sign({payload : loginData},'secret',{expiresIn : '1hr'});
+            const Token = jwt.sign({payload : loginData},'rudra',{expiresIn : '1hr'});
             res.json({ token : Token});
+        }
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
+}
+
+const getColumn = async (req,res) => {
+    try {
+        let useData = await userServices.fetchColumn();
+        if(useData){
+            res.json({ Data : useData, status : 1});
+        }else{
+            res.json({ message : "Data not found", status : 0});
+        }
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
+}
+
+const rawQuery = async (req,res) => {
+    try {
+        let useData = await userServices.queries();
+        if(useData){
+            res.json({ Data : useData, status : 1});
+        }else{
+            res.json({ message : "Data not found", status : 0});
         }
     } catch (err) {
         console.log(err);
@@ -106,6 +139,9 @@ module.exports = {
     viewUser,
     viewUserById,
     deleteUser,
+    deleteAllUser,
     updateUser,
-    login
+    login,
+    getColumn,
+    rawQuery
 }

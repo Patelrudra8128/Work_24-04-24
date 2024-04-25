@@ -1,3 +1,4 @@
+const { toDefaultValue } = require('sequelize/lib/utils');
 const sequelize = require('../config/db');
 const {Sequelize, DataTypes} = require("sequelize");
 
@@ -16,6 +17,10 @@ const UserSchema = sequelize.define("User",{
     password : {
         type : DataTypes.STRING
     },
+    role : {
+        type : DataTypes.STRING,
+        defaultValue : "user"
+    }
 });
 
 sequelize.sync().then(()=>{
